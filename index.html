@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vision-Language Models are Fragile Multilingual Associators</title>
+<title>Vision-Language Models are Fragile Multilingual Associators · M²BIND</title>
 <meta name="description" content="M²BIND: a benchmark that varies context and query language to test whether vision-language models maintain entity–attribute bindings across languages." />
 
 <!-- =================================================================
@@ -74,28 +74,29 @@
   .venue .ur{font-style:italic;}
 
   /* preview thumbnails (top-right) */
-  .previews{display:flex;gap:16px;flex-shrink:0;padding-top:4px;}
-  .pv{display:flex;flex-direction:column;align-items:center;width:118px;}
-  .pv .pvlabel{font-size:13px;color:var(--ink);margin-bottom:6px;font-style:italic;}
-  .pv a{border:none;display:block;width:100%;}
-  .pv .frame{border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;
-    background:#fff;height:96px;display:block;transition:transform .18s ease,box-shadow .2s ease;}
-  .pv a:hover .frame{transform:translateY(-3px);box-shadow:0 10px 20px -12px rgba(0,0,0,.4);}
-  .pv.paper .frame{display:flex;align-items:flex-start;justify-content:center;}
-  .pv.paper img{width:100%;display:block;}
+  .previews{display:flex;gap:26px;flex-shrink:0;padding-top:6px;align-items:flex-end;}
+  .pv{display:flex;flex-direction:column;align-items:center;}
+  .pv .pvlabel{font-size:15px;color:var(--ink);margin-bottom:8px;font-style:italic;}
+  .pv a{border:none;display:block;}
 
-  /* mini github repo card */
-  .ghcard{height:100%;display:flex;flex-direction:column;font-family:var(--serif);}
-  .ghcard .gh-top{display:flex;align-items:center;gap:5px;padding:8px 8px 6px;}
-  .ghcard .gh-av{width:15px;height:15px;border-radius:50%;
-    background:linear-gradient(135deg,#7c3a2c,#c2731c);flex-shrink:0;}
-  .ghcard .gh-name{font-size:10px;color:#222;line-height:1.1;}
-  .ghcard .gh-name b{font-weight:600;}
-  .ghcard .gh-body{flex:1;padding:0 8px;font-size:8px;color:#777;line-height:1.5;}
-  .ghcard .gh-row{display:flex;align-items:center;gap:4px;}
-  .ghcard .gh-row::before{content:"";width:7px;height:7px;border-radius:2px;background:#d9d6cf;display:inline-block;}
-  .ghcard .gh-bar{display:flex;height:5px;margin:6px 0 0;}
-  .ghcard .gh-bar i{display:block;height:100%;}
+  /* code: landscape GitHub social card */
+  .pv.code a .frame{border:1px solid var(--line-strong);border-radius:5px;overflow:hidden;
+    background:#fff;height:104px;width:208px;display:block;
+    transition:transform .18s ease,box-shadow .2s ease;}
+  .pv.code img{height:104px;width:208px;object-fit:cover;display:block;}
+  .pv.code a:hover .frame{transform:translateY(-3px);box-shadow:0 10px 22px -12px rgba(0,0,0,.4);}
+
+  /* paper: stacked first pages */
+  .pv.paper a{display:block;padding:3px 9px 0 3px;}
+  .stack{position:relative;width:84px;height:118px;
+    transition:transform .18s ease;}
+  .pv.paper a:hover .stack{transform:translateY(-3px);}
+  .stack img{position:absolute;top:0;left:0;width:76px;display:block;
+    border:1px solid var(--line);border-radius:2px;background:#fff;
+    box-shadow:0 4px 12px -5px rgba(0,0,0,.35);}
+  .stack .s3{transform:rotate(0) translate(8px,7px);z-index:1;filter:brightness(.985);}
+  .stack .s2{transform:rotate(0) translate(4px,3.5px);z-index:2;filter:brightness(.993);}
+  .stack .s1{z-index:3;}
 
   /* ---------------- SECTIONS ---------------- */
   .sec{margin-top:40px;}
@@ -207,29 +208,24 @@
     <div class="previews">
       <div class="pv code">
         <div class="pvlabel">Code</div>
-        <a href="https://github.com/ritabrata04/m2bind" target="_blank" rel="noopener" title="GitHub repository">
+        <a href="https://github.com/Ritabrata04/m2bind" target="_blank" rel="noopener" title="GitHub repository">
           <div class="frame">
-            <div class="ghcard">
-              <div class="gh-top"><span class="gh-av"></span><span class="gh-name"><b>ritabrata04</b>/<b>m2bind</b></span></div>
-              <div class="gh-body">
-                <div class="gh-row">eval_m2bind.py</div>
-                <div class="gh-row">interventions/</div>
-                <div class="gh-row">data/shapes/</div>
-                <div class="gh-row">README.md</div>
-              </div>
-              <div class="gh-bar">
-                <i style="width:62%;background:#3572A5"></i>
-                <i style="width:30%;background:#DA5B0B"></i>
-                <i style="width:8%;background:#89e051"></i>
-              </div>
-            </div>
+            <!-- GitHub auto-generates this social card (real avatar + live stats).
+                 Falls back to the committed PNG if the CDN is unreachable. -->
+            <img src="https://opengraph.githubassets.com/m2bind/Ritabrata04/m2bind"
+                 onerror="this.onerror=null;this.src='assets/code_preview.png';"
+                 alt="Ritabrata04/m2bind on GitHub" />
           </div>
         </a>
       </div>
       <div class="pv paper">
         <div class="pvlabel">Paper</div>
         <a href="pdf/m2bind.pdf" target="_blank" rel="noopener" title="Read the PDF">
-          <div class="frame"><img src="assets/paper_thumb.png" alt="Paper first page" /></div>
+          <div class="stack">
+            <img class="s3" src="assets/paper_page-3.png" alt="" />
+            <img class="s2" src="assets/paper_page-2.png" alt="" />
+            <img class="s1" src="assets/paper_page-1.png" alt="Paper first page" />
+          </div>
         </a>
       </div>
     </div>
