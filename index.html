@@ -1,1 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vision-Language Models are Fragile Multilingual Associators</title>
+<meta name="description" content="M²BIND: a benchmark that varies context and query language to test whether vision-language models maintain entity–attribute bindings across languages." />
 
+<!-- =================================================================
+  EDIT THESE LINKS (search for them):
+   · Code repo : https://github.com/ritabrata04/m2bind
+   · Paper PDF : pdf/m2bind.pdf
+   · arXiv     : (disabled — replace href="#arxiv" + remove .disabled when posted)
+================================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --page:#d9d6cf;       /* warm gray surround */
+    --panel:#f6f5f2;      /* cream content panel */
+    --box:#ffffff;        /* inner boxes */
+    --box-alt:#efeee9;    /* code / bibtex boxes */
+    --ink:#1a1815;        /* titles */
+    --maroon:#7c3a2c;     /* signature body text */
+    --maroon-soft:#9a5a4c;
+    --muted:#6b625c;      /* authors / secondary */
+    --venue:#a30f31;      /* venue line / under-review */
+    --hl:#d4202a;         /* inline highlight red */
+    --link:#2f5fa0;       /* hyperlinks */
+    --line:#e4e1da;
+    --line-strong:#d6d2c8;
+
+    /* language palette (mirrors the paper) */
+    --en:#2b5fa6; --fr:#1f7d76; --zh:#7a3b8f; --ar:#c2731c;
+    --nl:#3c7a3c; --de:#8a5a2b; --it:#b13b3b; --es:#6b3fa0;
+
+    --serif:'Newsreader', Georgia, 'Times New Roman', serif;
+    --mono:'Courier Prime', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--page);color:var(--maroon);
+    font-family:var(--serif);font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .panel{
+    max-width:1000px;margin:38px auto;background:var(--panel);
+    border-radius:16px;padding:54px 60px 40px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04);
+  }
+  a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(47,95,160,.32);}
+  a:hover{border-bottom-color:var(--link);}
+
+  /* ---------------- HEADER ---------------- */
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:34px;}
+  .head-l{flex:1;min-width:0;}
+  h1.title{
+    font-family:var(--serif);font-weight:500;color:var(--ink);
+    font-size:30px;line-height:1.16;letter-spacing:-.005em;margin:0;
+  }
+  .subtitle{font-family:var(--serif);font-weight:400;font-style:normal;color:var(--ink);
+    font-size:21px;line-height:1.2;margin:3px 0 0;}
+  .authors{color:var(--muted);font-size:15.5px;margin:13px 0 0;line-height:1.5;}
+  .affils{color:#8d847d;font-size:12.5px;margin:5px 0 0;line-height:1.5;}
+  .venue{display:flex;align-items:center;gap:8px;margin:11px 0 0;
+    color:var(--venue);font-size:13.5px;}
+  .venue .mark{font-weight:700;letter-spacing:.02em;font-family:var(--mono);
+    border:1.5px solid var(--venue);border-radius:4px;padding:0 5px;font-size:11px;line-height:1.55;}
+  .venue .sep{color:var(--line-strong);}
+  .venue .ur{font-style:italic;}
+
+  /* preview thumbnails (top-right) */
+  .previews{display:flex;gap:16px;flex-shrink:0;padding-top:4px;}
+  .pv{display:flex;flex-direction:column;align-items:center;width:118px;}
+  .pv .pvlabel{font-size:13px;color:var(--ink);margin-bottom:6px;font-style:italic;}
+  .pv a{border:none;display:block;width:100%;}
+  .pv .frame{border:1px solid var(--line-strong);border-radius:4px;overflow:hidden;
+    background:#fff;height:96px;display:block;transition:transform .18s ease,box-shadow .2s ease;}
+  .pv a:hover .frame{transform:translateY(-3px);box-shadow:0 10px 20px -12px rgba(0,0,0,.4);}
+  .pv.paper .frame{display:flex;align-items:flex-start;justify-content:center;}
+  .pv.paper img{width:100%;display:block;}
+
+  /* mini github repo card */
+  .ghcard{height:100%;display:flex;flex-direction:column;font-family:var(--serif);}
+  .ghcard .gh-top{display:flex;align-items:center;gap:5px;padding:8px 8px 6px;}
+  .ghcard .gh-av{width:15px;height:15px;border-radius:50%;
+    background:linear-gradient(135deg,#7c3a2c,#c2731c);flex-shrink:0;}
+  .ghcard .gh-name{font-size:10px;color:#222;line-height:1.1;}
+  .ghcard .gh-name b{font-weight:600;}
+  .ghcard .gh-body{flex:1;padding:0 8px;font-size:8px;color:#777;line-height:1.5;}
+  .ghcard .gh-row{display:flex;align-items:center;gap:4px;}
+  .ghcard .gh-row::before{content:"";width:7px;height:7px;border-radius:2px;background:#d9d6cf;display:inline-block;}
+  .ghcard .gh-bar{display:flex;height:5px;margin:6px 0 0;}
+  .ghcard .gh-bar i{display:block;height:100%;}
+
+  /* ---------------- SECTIONS ---------------- */
+  .sec{margin-top:40px;}
+  h2{font-family:var(--serif);font-weight:500;color:var(--ink);font-size:20px;
+    margin:0 0 12px;letter-spacing:-.005em;}
+  p{margin:0 0 14px;}
+  .body{color:var(--maroon);font-size:15.5px;line-height:1.66;}
+  .hl{color:var(--hl);font-weight:500;}
+  em{font-style:italic;}
+
+  /* hero: figure left, abstract right */
+  .hero{display:grid;grid-template-columns:minmax(0,46%) 1fr;gap:34px;align-items:start;margin-top:30px;}
+  .figbox{background:var(--box);border:1px solid var(--line);border-radius:10px;padding:12px;}
+  .figbox img{width:100%;display:block;border-radius:4px;cursor:zoom-in;}
+  .hero .abs{color:var(--maroon);font-size:15.5px;line-height:1.66;padding-top:4px;}
+  .hero .abs b{font-weight:600;color:#5e2a1f;}
+
+  /* language chips */
+  .en{color:var(--en);font-weight:600;} .fr{color:var(--fr);font-weight:600;}
+  .zh{color:var(--zh);font-weight:600;} .ar{color:var(--ar);font-weight:600;}
+  .nl{color:var(--nl);font-weight:600;} .de{color:var(--de);font-weight:600;}
+  .it{color:var(--it);font-weight:600;} .es{color:var(--es);font-weight:600;}
+
+  /* ---------------- SHOWCASE PANEL ---------------- */
+  .showcase{background:var(--box);border:1px solid var(--line);border-radius:12px;
+    padding:22px;margin-top:18px;}
+  .sc-top{display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px;}
+  .sc-title{font-size:14px;color:var(--ink);font-style:italic;}
+  .pairs{display:flex;flex-wrap:wrap;gap:6px;}
+  .pair{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    background:var(--box-alt);border:1px solid var(--line);border-radius:6px;
+    padding:4px 9px;cursor:pointer;transition:all .14s;}
+  .pair:hover{border-color:var(--line-strong);color:var(--ink);}
+  .pair.on{background:var(--ink);color:#f6f5f2;border-color:var(--ink);}
+
+  .sc-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:center;}
+  .ice-svg{width:100%;height:auto;display:block;}
+  .readout .verdict{font-size:13px;font-style:italic;margin-bottom:10px;}
+  .metrics{display:flex;gap:22px;margin-bottom:14px;}
+  .metric .v{font-family:var(--mono);font-size:30px;color:var(--ink);line-height:1;font-weight:700;}
+  .metric .k{font-size:11.5px;color:var(--muted);margin-top:5px;letter-spacing:.04em;}
+  .interp{font-size:13.5px;color:var(--maroon);line-height:1.55;}
+  .scnote{font-size:11.5px;color:#8d847d;margin-top:16px;font-style:italic;}
+
+  /* full ICE figure */
+  .figure{margin-top:18px;}
+  .figure img{width:100%;display:block;border-radius:8px;border:1px solid var(--line);
+    background:#fff;cursor:zoom-in;}
+  .cap{font-size:13px;color:var(--muted);line-height:1.55;margin-top:10px;}
+  .cap b{color:var(--maroon);font-weight:600;}
+
+  /* tables */
+  .tablewrap{overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;font-family:var(--serif);}
+  th,td{padding:7px 9px;text-align:center;border-bottom:1px solid var(--line);color:var(--ink);}
+  thead th{border-bottom:1.5px solid var(--ink);font-weight:600;}
+  tbody th{text-align:left;}
+  td.bad{color:var(--hl);font-weight:600;}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:26px;}
+  .twocol h3{font-size:14px;font-style:italic;color:var(--ink);text-align:center;margin:0 0 6px;font-weight:500;}
+
+  /* bibtex */
+  .codebox{background:var(--box-alt);border:1px solid var(--line);border-radius:8px;
+    position:relative;margin-top:6px;}
+  .codebox pre{margin:0;padding:16px 16px;overflow-x:auto;font-family:var(--mono);
+    font-size:12.5px;line-height:1.6;color:#3a342f;}
+  .copybtn{position:absolute;top:10px;right:10px;font-family:var(--serif);font-size:12.5px;
+    color:var(--muted);background:#fff;border:1px solid var(--line-strong);border-radius:6px;
+    padding:4px 10px;cursor:pointer;}
+  .copybtn:hover{color:var(--ink);}
+
+  footer{max-width:1000px;margin:0 auto;padding:18px 60px 50px;color:#8d847d;font-size:12.5px;font-style:italic;}
+
+  /* lightbox */
+  .lb{position:fixed;inset:0;background:rgba(26,24,21,.92);display:none;align-items:center;
+    justify-content:center;z-index:99;padding:30px;cursor:zoom-out;}
+  .lb.on{display:flex;} .lb img{max-width:95%;max-height:93%;border-radius:6px;}
+
+  @media(max-width:740px){
+    .panel{padding:30px 22px;margin:14px;}
+    .head{flex-direction:column;gap:20px;}
+    .previews{align-self:flex-start;}
+    .hero{grid-template-columns:1fr;gap:20px;}
+    .sc-grid{grid-template-columns:1fr;gap:18px;}
+    .twocol{grid-template-columns:1fr;}
+    h1.title{font-size:25px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+
+  <!-- ===================== HEADER ===================== -->
+  <div class="head">
+    <div class="head-l">
+      <h1 class="title">Vision-Language Models are Fragile Multilingual Associators</h1>
+      <!-- <div class="subtitle">(or, when concepts stop crossing languages)</div> -->
+      <div class="authors">Ritabrata Chakraborty, Rajatsubhra Chakraborty, Shivakumara Palaiahnakote, Angelo Cangelosi, and Umapada Pal</div>
+      <div class="affils">Manipal University Jaipur · UNC Charlotte · University of Salford · University of Manchester · ISI Kolkata</div>
+      <div class="venue">
+        <span class="mark">M²BIND</span>
+        <!-- <span class="sep">/</span> -->
+        <span class="ur">Under review, 2025</span>
+      </div>
+    </div>
+
+    <div class="previews">
+      <div class="pv code">
+        <div class="pvlabel">Code</div>
+        <a href="https://github.com/ritabrata04/m2bind" target="_blank" rel="noopener" title="GitHub repository">
+          <div class="frame">
+            <div class="ghcard">
+              <div class="gh-top"><span class="gh-av"></span><span class="gh-name"><b>ritabrata04</b>/<b>m2bind</b></span></div>
+              <div class="gh-body">
+                <div class="gh-row">eval_m2bind.py</div>
+                <div class="gh-row">interventions/</div>
+                <div class="gh-row">data/shapes/</div>
+                <div class="gh-row">README.md</div>
+              </div>
+              <div class="gh-bar">
+                <i style="width:62%;background:#3572A5"></i>
+                <i style="width:30%;background:#DA5B0B"></i>
+                <i style="width:8%;background:#89e051"></i>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="pv paper">
+        <div class="pvlabel">Paper</div>
+        <a href="pdf/m2bind.pdf" target="_blank" rel="noopener" title="Read the PDF">
+          <div class="frame"><img src="assets/paper_thumb.png" alt="Paper first page" /></div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HERO: teaser + abstract ===================== -->
+  <div class="hero">
+    <div class="figbox">
+      <img src="assets/teaser-1.png" alt="Concept binding across languages" onclick="zoom(this.src)" />
+    </div>
+    <div class="abs">
+      Vision-language models must associate visual entities with textual attributes. Whether these
+      associations — or concept <b>bindings</b> — remain stable when the language of the input changes
+      is unexplored. We introduce <b>M²BIND</b>, a benchmark varying the language of the context and
+      query across multiple languages, and evaluate binding both extrinsically through task performance
+      and intrinsically through causal interventions. We find that binding is <b>not language-invariant</b>:
+      cross-family and cross-script settings trigger significant binding collapse, with the model's internal
+      computation shifting to later layers and losing causal strength. Closely related languages preserve
+      associations comparatively better.
+    </div>
+  </div>
+
+  <!-- ===================== SHOWCASE ===================== -->
+  <div class="sec">
+    <h2>What does multilingual binding look like inside the model?</h2>
+    <p class="body">We render a fixed visual scene with a <em>context</em> that binds each object's colour to an
+      item symbol, then <em>query</em> one object by its shape — varying the context and query language
+      independently over eight languages. Because the image and gold answer are held fixed, any change isolates
+      the effect of <em>language</em>. We measure the <span class="hl">Factorization Margin</span> (FM, the score
+      separation between the bound item and the distractor) and locate <em>where</em> binding is consolidated using
+      an interchange intervention across decoder layers. Select a context → query pair to see how association
+      strength changes.</p>
+
+    <div class="showcase">
+      <div class="sc-top">
+        <span class="sc-title">Cross-family binding explorer</span>
+        <div class="pairs" id="pairs"></div>
+      </div>
+      <div class="sc-grid">
+        <div>
+          <svg class="ice-svg" id="iceSvg" viewBox="0 0 420 250" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="readout">
+          <div class="verdict" id="verdict"></div>
+          <div class="metrics">
+            <div class="metric"><div class="v" id="mAcc">—</div><div class="k">ACCURACY</div></div>
+            <div class="metric"><div class="v" id="mFM">—</div><div class="k">FACTOR. MARGIN</div></div>
+          </div>
+          <div class="interp" id="interp"></div>
+        </div>
+      </div>
+      <div class="scnote">The curve is a schematic of the interchange-intervention profile, with peak layer and
+        height set by the measured FM; the full measured curves appear below.</div>
+    </div>
+  </div>
+
+  <!-- ===================== ICE figure ===================== -->
+  <div class="sec">
+    <h2>Cross-lingual binding drifts to later layers</h2>
+    <div class="figure">
+      <img src="assets/ice_curves.png" alt="ICE curves across decoder layers" onclick="zoom(this.src)" />
+    </div>
+    <p class="cap"><b>Causal interventions for multilingual binding.</b> Change in log-probability (ICE) after the
+      interchange intervention, per decoder layer. Monolingual curves peak around the <b>middle layers (~15)</b>;
+      cross-lingual curves shift <b>right (~20)</b> and flatten — extra computation reconciles the two languages,
+      yet the binding is less causally separable. The <span class="zh">Zh</span>–<span class="ar">Ar</span> pair
+      gives the weakest, flattest curve.</p>
+  </div>
+
+  <!-- ===================== Cross-family table ===================== -->
+  <div class="sec">
+    <h2>Binding collapses across families</h2>
+    <p class="body">FM falls from <span class="hl">5.45</span> for monolingual <span class="en">English</span> to
+      <span class="hl">2.80</span> for the <span class="zh">Mandarin</span>–<span class="ar">Arabic</span>
+      cross-script pair — less than half its best monolingual value. Degradation is also <em>asymmetric</em>: a
+      non-Latin language on the query side is consistently harder than on the context side.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>ℓ<sub>ctx</sub> ↓ / ℓ<sub>q</sub> →</th>
+          <th class="en">En</th><th class="fr">Fr</th><th class="zh">Zh</th><th class="ar">Ar</th></tr></thead>
+        <tbody>
+          <tr><th class="en">En</th><td>0.995 / 5.45</td><td>0.990 / 5.20</td><td>0.955 / 3.85</td><td>0.940 / 3.40</td></tr>
+          <tr><th class="fr">Fr</th><td>0.990 / 5.10</td><td>0.995 / 5.25</td><td>0.945 / 3.60</td><td class="bad">0.930 / 3.25</td></tr>
+          <tr><th class="zh">Zh</th><td>0.965 / 4.10</td><td>0.955 / 3.85</td><td>0.985 / 4.95</td><td class="bad">0.900 / 2.80</td></tr>
+          <tr><th class="ar">Ar</th><td>0.950 / 3.75</td><td>0.940 / 3.50</td><td class="bad">0.905 / 2.85</td><td>0.975 / 4.55</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Each cell reports <em>Accuracy / FM</em>; higher is better for both.
+      <span style="color:var(--hl)">Worst cases highlighted.</span></p>
+  </div>
+
+  <!-- ===================== Tokenization + within-family ===================== -->
+  <div class="sec">
+    <h2>Where the fragility comes from</h2>
+    <p class="body">Part of it precedes the decoder, in <em>tokenizer unfairness</em>: in the monolingual setting,
+      <span class="ar">Arabic</span> needs ~28% more tokens than <span class="en">English</span>, truncates 12% of
+      prompts, and loses 2.55 FM with no cross-lingual transfer at all. And when languages are <em>close</em>,
+      binding survives — every within-family pair stays above an FM of 5.0.</p>
+    <div class="twocol">
+      <div>
+        <h3>Tokenization (monolingual)</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Lang</th><th>Tokens ↓</th><th>Trunc.% ↓</th><th>FM drop ↓</th></tr></thead>
+          <tbody>
+            <tr><th class="en">En</th><td>1450</td><td>0</td><td>0.00</td></tr>
+            <tr><th class="fr">Fr</th><td>1520</td><td>0</td><td>0.20</td></tr>
+            <tr><th class="zh">Zh</th><td>1720</td><td>5</td><td>1.70</td></tr>
+            <tr><th class="ar">Ar</th><td>1850</td><td>12</td><td>2.55</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3>Within-family FM</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>pair</th><th>Germanic</th><th>Romance</th></tr></thead>
+          <tbody>
+            <tr><th>best</th><td><span class="en">En</span>–<span class="nl">Nl</span> 5.30</td><td><span class="fr">Fr</span>–<span class="it">It</span> 5.15</td></tr>
+            <tr><th>worst</th><td class="bad"><span class="de">De</span>→· 5.00</td><td class="bad"><span class="es">Es</span>→· 5.00</td></tr>
+            <tr><th>floor</th><td>0.985 acc</td><td>0.985 acc</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BibTeX ===================== -->
+  <div class="sec">
+    <h2>BibTeX</h2>
+    <div class="codebox">
+      <button class="copybtn" onclick="copyBib(this)">Copy</button>
+<pre id="bib">@article{chakraborty2025m2bind,
+  title   = {Vision-Language Models are Fragile Multilingual Associators},
+  author  = {Chakraborty, Ritabrata and Chakraborty, Rajatsubhra and
+             Palaiahnakote, Shivakumara and Cangelosi, Angelo and Pal, Umapada},
+  journal = {Preprint. Under review},
+  year    = {2025},
+  url     = {https://ritabrata04.github.io/m2bind/}
+}</pre>
+    </div>
+  </div>
+
+</div>
+
+<footer>M²BIND · Vision-Language Models are Fragile Multilingual Associators. Page built for GitHub Pages.</footer>
+
+<div class="lb" id="lb" onclick="this.classList.remove('on')"><img id="lbimg" src="" alt="" /></div>
+
+<script>
+  // ---- real Table-1 data (Acc / FM) for the 16 cross-family pairs ----
+  var L=['En','Fr','Zh','Ar'];
+  var DATA={
+    'En-En':[.995,5.45],'En-Fr':[.990,5.20],'En-Zh':[.955,3.85],'En-Ar':[.940,3.40],
+    'Fr-En':[.990,5.10],'Fr-Fr':[.995,5.25],'Fr-Zh':[.945,3.60],'Fr-Ar':[.930,3.25],
+    'Zh-En':[.965,4.10],'Zh-Fr':[.955,3.85],'Zh-Zh':[.985,4.95],'Zh-Ar':[.900,2.80],
+    'Ar-En':[.950,3.75],'Ar-Fr':[.940,3.50],'Ar-Zh':[.905,2.85],'Ar-Ar':[.975,4.55]
+  };
+  var SCRIPT={En:'Latin',Fr:'Latin',Zh:'Logographic',Ar:'Abjad'};
+  var COL={En:'#2b5fa6',Fr:'#1f7d76',Zh:'#7a3b8f',Ar:'#c2731c'};
+
+  function verdictFor(fm){
+    if(fm>=5.0) return ['stable','#1f7d76'];
+    if(fm>=3.7) return ['weakened','#c2731c'];
+    return ['collapsed','#d4202a'];
+  }
+
+  function drawCurve(ctx,q){
+    var fm=DATA[ctx+'-'+q][1];
+    var mono=(ctx===q);
+    var peak=mono?15:(19 + (SCRIPT[ctx]!=='Latin'&&SCRIPT[q]!=='Latin'?1:0)); // mid vs late
+    var H=fm/5.45;                 // height scaled by FM (0..1)
+    var W=420,Hh=250,padL=42,padB=34,padT=14,padR=12;
+    var x0=padL,x1=W-padR,y0=Hh-padB,y1=padT;
+    var maxLayer=28;
+    function X(l){return x0+(l/maxLayer)*(x1-x0);}
+    function Y(v){return y0-v*(y0-y1);}   // v in 0..1
+    // gaussian-ish bump
+    var sigma=mono?4.2:5.6, pts=[];
+    for(var l=0;l<=maxLayer;l+=1){
+      var v=H*Math.exp(-Math.pow(l-peak,2)/(2*sigma*sigma));
+      pts.push([X(l),Y(v)]);
+    }
+    var path=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+    var area=path+' L '+X(maxLayer).toFixed(1)+' '+y0+' L '+x0+' '+y0+' Z';
+    var c=COL[q];
+    var grid='';
+    for(var gy=0;gy<=1.0001;gy+=0.25){grid+='<line x1="'+x0+'" y1="'+Y(gy)+'" x2="'+x1+'" y2="'+Y(gy)+'" stroke="#eee9e2" stroke-width="1"/>';}
+    var ticks='';
+    [0,5,10,15,20,25].forEach(function(l){ticks+='<text x="'+X(l)+'" y="'+(y0+15)+'" font-size="9" fill="#9a948c" text-anchor="middle" font-family="Courier Prime,monospace">'+l+'</text>';});
+    var peakX=X(peak), peakY=Y(H);
+    return ''
+      +grid
+      +'<line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'" stroke="#cfc9be" stroke-width="1"/>'
+      +'<line x1="'+x0+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'" stroke="#cfc9be" stroke-width="1"/>'
+      +ticks
+      +'<text x="'+((x0+x1)/2)+'" y="'+(Hh-3)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif">decoder layer</text>'
+      +'<text x="13" y="'+((y0+y1)/2)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif" transform="rotate(-90 13 '+((y0+y1)/2)+')">ICE (causal effect)</text>'
+      +'<path d="'+area+'" fill="'+c+'" opacity="0.10"/>'
+      +'<path d="'+path+'" fill="none" stroke="'+c+'" stroke-width="2.4"/>'
+      +'<line x1="'+peakX+'" y1="'+peakY+'" x2="'+peakX+'" y2="'+y0+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>'
+      +'<circle cx="'+peakX+'" cy="'+peakY+'" r="3.4" fill="'+c+'"/>'
+      +'<text x="'+peakX+'" y="'+(peakY-7)+'" font-size="9.5" fill="'+c+'" text-anchor="middle" font-family="Courier Prime,monospace">peak ~L'+peak+'</text>';
+  }
+
+  function select(ctx,q){
+    document.querySelectorAll('.pair').forEach(function(b){b.classList.toggle('on',b.dataset.k===ctx+'-'+q);});
+    var d=DATA[ctx+'-'+q], acc=d[0], fm=d[1];
+    document.getElementById('mAcc').textContent=acc.toFixed(3);
+    document.getElementById('mFM').textContent=fm.toFixed(2);
+    var vd=verdictFor(fm);
+    var mono=(ctx===q);
+    document.getElementById('verdict').innerHTML='<span style="color:'+vd[1]+'">● '+vd[0].toUpperCase()+'</span> · '
+      +'<b style="color:'+COL[ctx]+'">'+ctx+'</b> context → <b style="color:'+COL[q]+'">'+q+'</b> query';
+    var interp;
+    if(mono){
+      interp='Monolingual baseline. Binding is consolidated in the <b>middle layers</b> and the bound item is cleanly separated from the distractor.';
+    } else if(vd[0]==='collapsed'){
+      interp='Two non-Latin scripts mixed. Binding nearly <b>collapses</b> — the intervention barely moves the score, so the two items are weakly distinguished and the peak drifts <b>late</b>.';
+    } else if(vd[0]==='weakened'){
+      interp='A Latin and a non-Latin script. Association survives but is <b>measurably weaker</b>, with computation pushed toward <b>later layers</b>.';
+    } else {
+      interp='Closely related languages. The binding stays near its monolingual strength.';
+    }
+    document.getElementById('interp').innerHTML=interp;
+    document.getElementById('iceSvg').innerHTML=drawCurve(ctx,q);
+  }
+
+  // build pair buttons (a representative ramp from stable to collapsed)
+  var order=[['En','En'],['En','Fr'],['En','Zh'],['En','Ar'],['Zh','Zh'],['Ar','Ar'],['Ar','Zh'],['Zh','Ar']];
+  var pc=document.getElementById('pairs');
+  order.forEach(function(p){
+    var b=document.createElement('div');b.className='pair';b.dataset.k=p[0]+'-'+p[1];
+    b.textContent=p[0]+'→'+p[1];
+    b.onclick=function(){select(p[0],p[1]);};
+    pc.appendChild(b);
+  });
+  select('En','En');
+
+  function zoom(src){var lb=document.getElementById('lb');document.getElementById('lbimg').src=src;lb.classList.add('on');}
+  function copyBib(btn){
+    navigator.clipboard.writeText(document.getElementById('bib').innerText).then(function(){
+      var o=btn.textContent;btn.textContent='Copied ✓';setTimeout(function(){btn.textContent=o;},1500);
+    });
+  }
+</script>
+</body>
+</html>
