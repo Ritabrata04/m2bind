@@ -220,11 +220,16 @@
       </div>
       <div class="pv paper">
         <div class="pvlabel">Paper</div>
-        <a href="pdf/m2bind.pdf" target="_blank" rel="noopener" title="Read the PDF">
-          <div class="stack">
-            <img class="s3" src="assets/paper_page-3.png" alt="" />
-            <img class="s2" src="assets/paper_page-2.png" alt="" />
-            <img class="s1" src="assets/paper_page-1.png" alt="Paper first page" />
+        <a href="assets/paper.pdf" target="_blank" rel="noopener" title="Read the PDF">
+          <!-- Pages are rendered live from assets/paper.pdf (first 3) by PDF.js.
+               The data-fallback PNGs are used only if PDF.js can't load. -->
+          <div class="stack" id="paperStack" data-pdf="assets/paper.pdf">
+            <img class="s3" data-fallback="assets/paper_page-3.png" alt=""
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 595 842'%3E%3Crect width='595' height='842' fill='%23ffffff'/%3E%3C/svg%3E" />
+            <img class="s2" data-fallback="assets/paper_page-2.png" alt=""
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 595 842'%3E%3Crect width='595' height='842' fill='%23ffffff'/%3E%3C/svg%3E" />
+            <img class="s1" data-fallback="assets/paper_page-1.png" alt="Paper first page"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 595 842'%3E%3Crect width='595' height='842' fill='%23ffffff'/%3E%3C/svg%3E" />
           </div>
         </a>
       </div>
@@ -470,6 +475,50 @@
       var o=btn.textContent;btn.textContent='Copied ✓';setTimeout(function(){btn.textContent=o;},1500);
     });
   }
+</script>
+
+<!-- ===== Paper preview: render first 3 pages straight from the PDF ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function(){
+  var stack = document.getElementById('paperStack');
+  if(!stack) return;
+  var imgs = [stack.querySelector('.s1'), stack.querySelector('.s2'), stack.querySelector('.s3')];
+  var PDF_URL = stack.getAttribute('data-pdf') || 'assets/paper.pdf';
+
+  function useFallback(){
+    imgs.forEach(function(img){
+      var fb = img.getAttribute('data-fallback');
+      if(fb){ img.onerror=null; img.src = fb; }
+    });
+  }
+  if(!window.pdfjsLib){ useFallback(); return; }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfjsLib.getDocument(PDF_URL).promise.then(function(pdf){
+    var n = Math.min(3, pdf.numPages);
+    for(var i=1; i<=n; i++){ renderPage(pdf, i); }
+  }).catch(function(err){
+    console.warn('PDF preview unavailable, using fallback images.', err);
+    useFallback();
+  });
+
+  function renderPage(pdf, pageNum){
+    pdf.getPage(pageNum).then(function(page){
+      var base = page.getViewport({scale:1});
+      var scale = 250 / base.width;            // ~3x the 76px display width, for crispness
+      var vp = page.getViewport({scale:scale});
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      var ctx = canvas.getContext('2d');
+      page.render({canvasContext:ctx, viewport:vp}).promise.then(function(){
+        imgs[pageNum-1].src = canvas.toDataURL('image/png');
+      }).catch(function(){ var fb=imgs[pageNum-1].getAttribute('data-fallback'); if(fb) imgs[pageNum-1].src=fb; });
+    });
+  }
+})();
 </script>
 </body>
 </html>
