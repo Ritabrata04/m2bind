@@ -48,8 +48,8 @@
     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   }
   .panel{
-    max-width:1000px;margin:38px auto;background:var(--panel);
-    border-radius:16px;padding:54px 60px 40px;
+    width:95%;max-width:1360px;margin:32px auto;background:var(--panel);
+    border-radius:16px;padding:50px 54px 40px;
     box-shadow:0 1px 2px rgba(0,0,0,.04);
   }
   a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(47,95,160,.32);}
@@ -108,7 +108,7 @@
   em{font-style:italic;}
 
   /* hero: figure left, abstract right */
-  .hero{display:grid;grid-template-columns:minmax(0,46%) 1fr;gap:34px;align-items:start;margin-top:30px;}
+  .hero{display:grid;grid-template-columns:minmax(0,46%) 1fr;gap:34px;align-items:center;margin-top:30px;}
   .figbox{background:var(--box);border:1px solid var(--line);border-radius:10px;padding:12px;}
   .figbox img{width:100%;display:block;border-radius:4px;cursor:zoom-in;}
   .hero .abs{color:var(--maroon);font-size:15.5px;line-height:1.66;padding-top:4px;}
@@ -132,6 +132,7 @@
     padding:4px 9px;cursor:pointer;transition:all .14s;}
   .pair:hover{border-color:var(--line-strong);color:var(--ink);}
   .pair.on{background:var(--ink);color:#f6f5f2;border-color:var(--ink);}
+  .pair-all{margin-left:6px;border-style:dashed;font-weight:700;}
 
   .sc-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:center;}
   .ice-svg{width:100%;height:auto;display:block;}
@@ -169,7 +170,7 @@
     padding:4px 10px;cursor:pointer;}
   .copybtn:hover{color:var(--ink);}
 
-  footer{max-width:1000px;margin:0 auto;padding:18px 60px 50px;color:#8d847d;font-size:12.5px;font-style:italic;}
+  footer{width:95%;max-width:1360px;margin:0 auto;padding:18px 54px 50px;color:#8d847d;font-size:12.5px;font-style:italic;}
 
   /* lightbox */
   .lb{position:fixed;inset:0;background:rgba(26,24,21,.92);display:none;align-items:center;
@@ -177,7 +178,7 @@
   .lb.on{display:flex;} .lb img{max-width:95%;max-height:93%;border-radius:6px;}
 
   @media(max-width:740px){
-    .panel{padding:30px 22px;margin:14px;}
+    .panel{padding:30px 22px;margin:14px;width:auto;}
     .head{flex-direction:column;gap:20px;}
     .previews{align-self:flex-start;}
     .hero{grid-template-columns:1fr;gap:20px;}
@@ -200,7 +201,7 @@
       <div class="affils">Manipal University Jaipur · UNC Charlotte · University of Salford · University of Manchester · ISI Kolkata</div>
       <div class="venue">
         <span class="mark">2026</span>
-        <span class="sep">/</span>
+        <!-- <span class="sep">/</span> -->
         <span class="ur">Under Review</span>
       </div>
     </div>
@@ -256,13 +257,11 @@
   <!-- ===================== SHOWCASE ===================== -->
   <div class="sec">
     <h2>What does multilingual binding look like inside the model?</h2>
-    <p class="body">We render a fixed visual scene with a <em>context</em> that binds each object's colour to an
-      item symbol, then <em>query</em> one object by its shape — varying the context and query language
-      independently over eight languages. Because the image and gold answer are held fixed, any change isolates
-      the effect of <em>language</em>. We measure the <span class="hl">Factorization Margin</span> (FM, the score
-      separation between the bound item and the distractor) and locate <em>where</em> binding is consolidated using
-      an interchange intervention across decoder layers. Select a context → query pair to see how association
-      strength changes.</p>
+    <p class="body">A fixed scene binds each object's colour to an item symbol; a <em>query</em> then asks about one
+      object by shape, with context and query language varied independently. We track the
+      <span class="hl">Factorization Margin</span> (separation between the bound item and the distractor) and, via
+      an interchange intervention, <em>where</em> in the decoder binding is consolidated. Pick a context → query
+      pair, or <em>All</em> to compare every curve.</p>
 
     <div class="showcase">
       <div class="sc-top">
@@ -282,8 +281,7 @@
           <div class="interp" id="interp"></div>
         </div>
       </div>
-      <div class="scnote">The curve is a schematic of the interchange-intervention profile, with peak layer and
-        height set by the measured FM; the full measured curves appear below.</div>
+      <div class="scnote">Curves are schematic interchange-intervention profiles; peak layer and height follow the measured FM.</div>
     </div>
   </div>
 
@@ -397,68 +395,112 @@
     return ['collapsed','#d4202a'];
   }
 
-  function drawCurve(ctx,q){
+  // ---- shared geometry ----
+  var maxLayer=28;
+  var GW=420,GH=250,gpadL=42,gpadB=34,gpadT=14,gpadR=12;
+  var gx0=gpadL,gx1=GW-gpadR,gy0=GH-gpadB,gy1=gpadT;
+  function GX(l){return gx0+(l/maxLayer)*(gx1-gx0);}
+  function GY(v){return gy0-v*(gy0-gy1);}
+
+  function geom(ctx,q){
     var fm=DATA[ctx+'-'+q][1];
     var mono=(ctx===q);
-    var peak=mono?15:(19 + (SCRIPT[ctx]!=='Latin'&&SCRIPT[q]!=='Latin'?1:0)); // mid vs late
-    var H=fm/5.45;                 // height scaled by FM (0..1)
-    var W=420,Hh=250,padL=42,padB=34,padT=14,padR=12;
-    var x0=padL,x1=W-padR,y0=Hh-padB,y1=padT;
-    var maxLayer=28;
-    function X(l){return x0+(l/maxLayer)*(x1-x0);}
-    function Y(v){return y0-v*(y0-y1);}   // v in 0..1
-    // gaussian-ish bump
-    var sigma=mono?4.2:5.6, pts=[];
-    for(var l=0;l<=maxLayer;l+=1){
-      var v=H*Math.exp(-Math.pow(l-peak,2)/(2*sigma*sigma));
-      pts.push([X(l),Y(v)]);
-    }
+    var peak=mono?15:(19+(SCRIPT[ctx]!=='Latin'&&SCRIPT[q]!=='Latin'?1:0)); // mid vs late
+    var H=fm/5.45, sigma=mono?4.2:5.6, pts=[];
+    for(var l=0;l<=maxLayer;l++){var v=H*Math.exp(-Math.pow(l-peak,2)/(2*sigma*sigma));pts.push([GX(l),GY(v)]);}
     var path=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
-    var area=path+' L '+X(maxLayer).toFixed(1)+' '+y0+' L '+x0+' '+y0+' Z';
-    var c=COL[q];
-    var grid='';
-    for(var gy=0;gy<=1.0001;gy+=0.25){grid+='<line x1="'+x0+'" y1="'+Y(gy)+'" x2="'+x1+'" y2="'+Y(gy)+'" stroke="#eee9e2" stroke-width="1"/>';}
-    var ticks='';
-    [0,5,10,15,20,25].forEach(function(l){ticks+='<text x="'+X(l)+'" y="'+(y0+15)+'" font-size="9" fill="#9a948c" text-anchor="middle" font-family="Courier Prime,monospace">'+l+'</text>';});
-    var peakX=X(peak), peakY=Y(H);
-    return ''
-      +grid
-      +'<line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'" stroke="#cfc9be" stroke-width="1"/>'
-      +'<line x1="'+x0+'" y1="'+y0+'" x2="'+x0+'" y2="'+y1+'" stroke="#cfc9be" stroke-width="1"/>'
-      +ticks
-      +'<text x="'+((x0+x1)/2)+'" y="'+(Hh-3)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif">decoder layer</text>'
-      +'<text x="13" y="'+((y0+y1)/2)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif" transform="rotate(-90 13 '+((y0+y1)/2)+')">ICE (causal effect)</text>'
-      +'<path d="'+area+'" fill="'+c+'" opacity="0.10"/>'
-      +'<path d="'+path+'" fill="none" stroke="'+c+'" stroke-width="2.4"/>'
-      +'<line x1="'+peakX+'" y1="'+peakY+'" x2="'+peakX+'" y2="'+y0+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>'
-      +'<circle cx="'+peakX+'" cy="'+peakY+'" r="3.4" fill="'+c+'"/>'
-      +'<text x="'+peakX+'" y="'+(peakY-7)+'" font-size="9.5" fill="'+c+'" text-anchor="middle" font-family="Courier Prime,monospace">peak ~L'+peak+'</text>';
+    return {path:path, peakX:GX(peak), peakY:GY(H), peak:peak, fm:fm};
   }
 
+  function axes(){
+    var s='';
+    for(var v=0;v<=1.0001;v+=0.25){s+='<line x1="'+gx0+'" y1="'+GY(v)+'" x2="'+gx1+'" y2="'+GY(v)+'" stroke="#eee9e2" stroke-width="1"/>';}
+    [0,5,10,15,20,25].forEach(function(l){s+='<text x="'+GX(l)+'" y="'+(gy0+15)+'" font-size="9" fill="#9a948c" text-anchor="middle" font-family="Courier Prime,monospace">'+l+'</text>';});
+    s+='<line x1="'+gx0+'" y1="'+gy0+'" x2="'+gx1+'" y2="'+gy0+'" stroke="#cfc9be" stroke-width="1"/>';
+    s+='<line x1="'+gx0+'" y1="'+gy0+'" x2="'+gx0+'" y2="'+gy1+'" stroke="#cfc9be" stroke-width="1"/>';
+    s+='<text x="'+((gx0+gx1)/2)+'" y="'+(GH-3)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif">decoder layer</text>';
+    s+='<text x="13" y="'+((gy0+gy1)/2)+'" font-size="9.5" fill="#6b625c" text-anchor="middle" font-family="Newsreader,serif" transform="rotate(-90 13 '+((gy0+gy1)/2)+')">ICE (causal effect)</text>';
+    return s;
+  }
+
+  function drawSingle(ctx,q){
+    var g=geom(ctx,q), c=COL[q];
+    var area=g.path+' L '+GX(maxLayer).toFixed(1)+' '+gy0+' L '+gx0+' '+gy0+' Z';
+    return axes()
+      +'<path class="fade-in" data-op="0.10" style="opacity:0" d="'+area+'" fill="'+c+'"/>'
+      +'<path class="curve-path" d="'+g.path+'" fill="none" stroke="'+c+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+      +'<line class="fade-in" data-op="0.6" style="opacity:0" x1="'+g.peakX+'" y1="'+g.peakY+'" x2="'+g.peakX+'" y2="'+gy0+'" stroke="'+c+'" stroke-width="1" stroke-dasharray="3 3"/>'
+      +'<circle class="fade-in" data-op="1" style="opacity:0" cx="'+g.peakX+'" cy="'+g.peakY+'" r="3.4" fill="'+c+'"/>'
+      +'<text class="fade-in" data-op="1" style="opacity:0" x="'+g.peakX+'" y="'+(g.peakY-7)+'" font-size="9.5" fill="'+c+'" text-anchor="middle" font-family="Courier Prime,monospace">peak ~L'+g.peak+'</text>';
+  }
+
+  var ALL=[['En','En','#2b5fa6'],['Zh','Zh','#7a3b8f'],['Ar','Ar','#c2731c'],
+           ['En','Zh','#1f7d76'],['En','Ar','#b13b3b'],['Zh','Ar','#3c7a3c']];
+  function drawAll(){
+    var s=axes();
+    ALL.forEach(function(t){
+      var g=geom(t[0],t[1]);
+      s+='<path class="curve-path" d="'+g.path+'" fill="none" stroke="'+t[2]+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    });
+    return s;
+  }
+  function legendHtml(){
+    return ALL.map(function(t){
+      return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:12.5px;">'
+        +'<span style="width:18px;height:3px;background:'+t[2]+';display:inline-block;border-radius:2px;flex-shrink:0"></span>'
+        +'<span><b style="color:'+t[2]+'">'+t[0]+'→'+t[1]+'</b> <span style="color:var(--muted)">FM '+DATA[t[0]+'-'+t[1]][1].toFixed(2)+'</span></span></div>';
+    }).join('');
+  }
+
+  // animate every .curve-path with a left→right line draw; .fade-in elements appear after
+  function animateSvg(perDur, stagger){
+    var svg=document.getElementById('iceSvg');
+    var paths=svg.querySelectorAll('.curve-path'), maxEnd=0;
+    paths.forEach(function(p,i){
+      var len=p.getTotalLength();
+      p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+      void p.getBoundingClientRect();                       // commit start state
+      var delay=i*stagger;
+      p.style.transition='stroke-dashoffset '+perDur+'ms cubic-bezier(.3,.6,.3,1) '+delay+'ms';
+      p.style.strokeDashoffset='0';
+      if(delay+perDur>maxEnd) maxEnd=delay+perDur;
+    });
+    svg.querySelectorAll('.fade-in').forEach(function(el){
+      void el.getBoundingClientRect();
+      el.style.transition='opacity 360ms ease '+maxEnd+'ms';
+      el.style.opacity=el.getAttribute('data-op')||'1';
+    });
+  }
+
+  var metricsEl;
   function select(ctx,q){
     document.querySelectorAll('.pair').forEach(function(b){b.classList.toggle('on',b.dataset.k===ctx+'-'+q);});
     var d=DATA[ctx+'-'+q], acc=d[0], fm=d[1];
+    metricsEl.style.display='flex';
     document.getElementById('mAcc').textContent=acc.toFixed(3);
     document.getElementById('mFM').textContent=fm.toFixed(2);
-    var vd=verdictFor(fm);
-    var mono=(ctx===q);
+    var vd=verdictFor(fm), mono=(ctx===q);
     document.getElementById('verdict').innerHTML='<span style="color:'+vd[1]+'">● '+vd[0].toUpperCase()+'</span> · '
       +'<b style="color:'+COL[ctx]+'">'+ctx+'</b> context → <b style="color:'+COL[q]+'">'+q+'</b> query';
     var interp;
-    if(mono){
-      interp='Monolingual baseline. Binding is consolidated in the <b>middle layers</b> and the bound item is cleanly separated from the distractor.';
-    } else if(vd[0]==='collapsed'){
-      interp='Two non-Latin scripts mixed. Binding nearly <b>collapses</b> — the intervention barely moves the score, so the two items are weakly distinguished and the peak drifts <b>late</b>.';
-    } else if(vd[0]==='weakened'){
-      interp='A Latin and a non-Latin script. Association survives but is <b>measurably weaker</b>, with computation pushed toward <b>later layers</b>.';
-    } else {
-      interp='Closely related languages. The binding stays near its monolingual strength.';
-    }
+    if(mono){ interp='Monolingual baseline. Binding is consolidated in the <b>middle layers</b> and the bound item is cleanly separated from the distractor.'; }
+    else if(vd[0]==='collapsed'){ interp='Two non-Latin scripts mixed. Binding nearly <b>collapses</b> — the intervention barely moves the score and the peak drifts <b>late</b>.'; }
+    else if(vd[0]==='weakened'){ interp='A Latin and a non-Latin script. Association survives but is <b>measurably weaker</b>, with computation pushed <b>later</b>.'; }
+    else { interp='Closely related languages. The binding stays near its monolingual strength.'; }
     document.getElementById('interp').innerHTML=interp;
-    document.getElementById('iceSvg').innerHTML=drawCurve(ctx,q);
+    document.getElementById('iceSvg').innerHTML=drawSingle(ctx,q);
+    animateSvg(1150, 0);
+  }
+  function selectAll(){
+    document.querySelectorAll('.pair').forEach(function(b){b.classList.toggle('on',b.dataset.k==='ALL');});
+    metricsEl.style.display='none';
+    document.getElementById('verdict').innerHTML='<span style="color:var(--ink)">All pairs</span> · monolingual peaks mid-stack, cross-lingual drift later';
+    document.getElementById('interp').innerHTML=legendHtml();
+    document.getElementById('iceSvg').innerHTML=drawAll();
+    animateSvg(900, 120);
   }
 
-  // build pair buttons (a representative ramp from stable to collapsed)
+  // build pair buttons (a representative ramp from stable to collapsed) + an "All" toggle
   var order=[['En','En'],['En','Fr'],['En','Zh'],['En','Ar'],['Zh','Zh'],['Ar','Ar'],['Ar','Zh'],['Zh','Ar']];
   var pc=document.getElementById('pairs');
   order.forEach(function(p){
@@ -467,6 +509,11 @@
     b.onclick=function(){select(p[0],p[1]);};
     pc.appendChild(b);
   });
+  var ab=document.createElement('div');ab.className='pair pair-all';ab.dataset.k='ALL';ab.textContent='All';
+  ab.onclick=function(){selectAll();};
+  pc.appendChild(ab);
+
+  metricsEl=document.querySelector('.metrics');
   select('En','En');
 
   function zoom(src){var lb=document.getElementById('lb');document.getElementById('lbimg').src=src;lb.classList.add('on');}
